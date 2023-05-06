@@ -258,6 +258,9 @@ impl mio::event::Source for Tun {
             packet_send.bytes_mut().copy_from_slice(&packet);
             session.send_packet(packet_send);
             drop(out_tx.send(packet));
+            if interests.is_readable() {
+              waker.wake()?;
+            }
           } else {
             packet_buffer.push_back(packet);
           }
