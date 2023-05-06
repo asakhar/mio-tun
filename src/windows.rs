@@ -257,6 +257,7 @@ impl mio::event::Source for Tun {
           if let Ok(mut packet_send) = session.allocate_send_packet(packet.len() as u16) {
             packet_send.bytes_mut().copy_from_slice(&packet);
             session.send_packet(packet_send);
+            drop(out_tx.send(packet));
           } else {
             packet_buffer.push_back(packet);
           }
