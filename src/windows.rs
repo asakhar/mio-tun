@@ -1,8 +1,7 @@
 use std::{
   collections::VecDeque,
-  io::{ErrorKind, Write},
+  io::ErrorKind,
   net::Ipv4Addr,
-  path::{Path, PathBuf},
   sync::{
     atomic::{AtomicBool, Ordering},
     mpsc::{self, Receiver, Sender},
@@ -11,68 +10,68 @@ use std::{
   thread::JoinHandle,
 };
 
-#[cfg(target_arch = "x86_64")]
-pub const WINTUN_DLL: &'static [u8] = include_bytes!("wintun/bin/amd64/wintun.dll");
-#[cfg(target_arch = "x86")]
-pub const WINTUN_DLL: &'static [u8] = include_bytes!("wintun/bin/x86/wintun.dll");
-#[cfg(target_arch = "arm")]
-pub const WINTUN_DLL: &'static [u8] = include_bytes!("wintun/bin/arm/wintun.dll");
-#[cfg(target_arch = "aarch64")]
-pub const WINTUN_DLL: &'static [u8] = include_bytes!("wintun/bin/arm64/wintun.dll");
+// #[cfg(target_arch = "x86_64")]
+// pub const WINTUN_DLL: &'static [u8] = include_bytes!("wintun/bin/amd64/wintun.dll");
+// #[cfg(target_arch = "x86")]
+// pub const WINTUN_DLL: &'static [u8] = include_bytes!("wintun/bin/x86/wintun.dll");
+// #[cfg(target_arch = "arm")]
+// pub const WINTUN_DLL: &'static [u8] = include_bytes!("wintun/bin/arm/wintun.dll");
+// #[cfg(target_arch = "aarch64")]
+// pub const WINTUN_DLL: &'static [u8] = include_bytes!("wintun/bin/arm64/wintun.dll");
 
-pub fn unpack_dll(path: impl AsRef<Path>) -> std::io::Result<()> {
-  let mut file = std::fs::File::options()
-    .write(true)
-    .create(true)
-    .open(path)?;
-  file.write_all(WINTUN_DLL)?;
-  Ok(())
-}
+// pub fn unpack_dll(path: impl AsRef<Path>) -> std::io::Result<()> {
+//   let mut file = std::fs::File::options()
+//     .write(true)
+//     .create(true)
+//     .open(path)?;
+//   file.write_all(WINTUN_DLL)?;
+//   Ok(())
+// }
 
-pub fn load_wintun_with_path(path: impl AsRef<Path>) -> std::io::Result<Wintun> {
-  let path = path.as_ref();
-  unpack_dll(path)?;
-  unsafe { wintun::load_from_path(path) }
-    .map_err(|err| std::io::Error::new(ErrorKind::InvalidData, err))
-}
+// pub fn load_wintun_with_path(path: impl AsRef<Path>) -> std::io::Result<Wintun> {
+//   let path = path.as_ref();
+//   unpack_dll(path)?;
+//   unsafe { wintun::load_from_path(path) }
+//     .map_err(|err| std::io::Error::new(ErrorKind::InvalidData, err))
+// }
 
-pub const ALOGNSIDE_PATH: &'static str = "./wintun.dll";
-pub fn get_tmp_path() -> PathBuf {
-  let path = std::env::var_os("Temp").expect("Temp directory env variable not found");
-  let path = Path::new(&path).join("wintun");
-  std::fs::create_dir_all(&path).expect("Failed to create directory for wintun dll");
-  path.join("wintun.dll")
-}
+// pub const ALOGNSIDE_PATH: &'static str = "./wintun.dll";
+// pub fn get_tmp_path() -> PathBuf {
+//   let path = std::env::var_os("Temp").expect("Temp directory env variable not found");
+//   let path = Path::new(&path).join("wintun");
+//   std::fs::create_dir_all(&path).expect("Failed to create directory for wintun dll");
+//   path.join("wintun.dll")
+// }
 
-pub fn adapter_with_path(
-  path: impl AsRef<Path>,
-  name: impl AsRef<str>,
-  pool: impl AsRef<str>,
-) -> std::io::Result<Arc<Adapter>> {
-  let wintun = load_wintun_with_path(path)?;
-  let name = name.as_ref();
-  let pool = pool.as_ref();
-  Ok(match Adapter::open(&wintun, name) {
-    Ok(a) => a,
-    Err(_) => {
-      //If loading failed (most likely it didn't exist), create a new one
-      wintun::Adapter::create(&wintun, pool, name, None)
-        .map_err(|err| std::io::Error::new(ErrorKind::Other, format!("{err}")))?
-    }
-  })
-}
+// pub fn adapter_with_path(
+//   path: impl AsRef<Path>,
+//   name: impl AsRef<str>,
+//   pool: impl AsRef<str>,
+// ) -> std::io::Result<Arc<Adapter>> {
+//   let wintun = load_wintun_with_path(path)?;
+//   let name = name.as_ref();
+//   let pool = pool.as_ref();
+//   Ok(match Adapter::open(&wintun, name) {
+//     Ok(a) => a,
+//     Err(_) => {
+//       //If loading failed (most likely it didn't exist), create a new one
+//       wintun::Adapter::create(&wintun, pool, name, None)
+//         .map_err(|err| std::io::Error::new(ErrorKind::Other, format!("{err}")))?
+//     }
+//   })
+// }
 
-pub fn session_with_path(
-  path: impl AsRef<Path>,
-  name: impl AsRef<str>,
-  pool: impl AsRef<str>,
-) -> std::io::Result<(Arc<Session>, Arc<Adapter>)> {
-  let adapter = adapter_with_path(path, name, pool)?;
-  let session = adapter
-    .start_session(wintun::MAX_RING_CAPACITY)
-    .map_err(|err| std::io::Error::new(ErrorKind::Other, format!("{err}")))?;
-  Ok((Arc::new(session), adapter))
-}
+// pub fn session_with_path(
+//   path: impl AsRef<Path>,
+//   name: impl AsRef<str>,
+//   pool: impl AsRef<str>,
+// ) -> std::io::Result<(Arc<Session>, Arc<Adapter>)> {
+//   let adapter = adapter_with_path(path, name, pool)?;
+//   let session = adapter
+//     .start_session(wintun::MAX_RING_CAPACITY)
+//     .map_err(|err| std::io::Error::new(ErrorKind::Other, format!("{err}")))?;
+//   Ok((Arc::new(session), adapter))
+// }
 
 pub fn set_ip_address(
   adapter: &Arc<Adapter>,
@@ -90,9 +89,7 @@ pub fn set_ip_address(
   const LIFETIME_INFINITE: winapi::ctypes::c_ulong = 0xffffffff;
   address_row.ValidLifetime = LIFETIME_INFINITE;
   address_row.PreferredLifetime = LIFETIME_INFINITE;
-  address_row.InterfaceLuid = winapi::shared::ifdef::NET_LUID_LH {
-    Value: adapter.get_luid(),
-  };
+  address_row.InterfaceLuid = adapter.get_luid();
   unsafe {
     let ipv4 = address_row.Address.Ipv4_mut();
     ipv4.sin_family = winapi::shared::ws2def::AF_INET as _;
@@ -114,11 +111,11 @@ pub fn set_ip_address(
   Ok(())
 }
 
-use wintun::{Adapter, Session, Wintun};
+use wtun::{ring_capacity, Adapter, Session, MAX_RING_CAPACITY};
 
 pub struct Tun {
   session: Arc<Session>,
-  adapter: Arc<Adapter>,
+  adapter: Box<Adapter>,
   in_tx: Option<Sender<Vec<u8>>>,
   out_rx: Option<Receiver<Vec<u8>>>,
   thread: Option<JoinHandle<std::io::Result<()>>>,
@@ -136,29 +133,8 @@ impl TunSender {
 }
 
 impl Tun {
-  pub fn from_adapter(adapter: Arc<Adapter>) -> std::io::Result<Self> {
-    let session = adapter
-      .start_session(wintun::MAX_RING_CAPACITY)
-      .map_err(|err| std::io::Error::new(ErrorKind::Other, format!("{err}")))?;
-    let session = Arc::new(session);
-    Ok(Self {
-      session,
-      adapter,
-      in_tx: None,
-      out_rx: None,
-      thread: None,
-      terminate: Arc::new(AtomicBool::new(true)),
-    })
-  }
-  pub fn new_with_path(
-    path: impl AsRef<Path>,
-    name: impl AsRef<str>,
-    pool: impl AsRef<str>,
-    ip: Ipv4Addr,
-    mask: u8,
-  ) -> std::io::Result<Self> {
-    let (session, adapter) = session_with_path(path, name, pool)?;
-    set_ip_address(&adapter, ip, mask)?;
+  pub fn from_adapter(mut adapter: Box<Adapter>) -> std::io::Result<Self> {
+    let session = adapter.start_session_wrapped(ring_capacity!(MAX_RING_CAPACITY))?;
     Ok(Self {
       session,
       adapter,
@@ -174,15 +150,23 @@ impl Tun {
     ip: Ipv4Addr,
     mask: u8,
   ) -> std::io::Result<Self> {
-    Self::new_with_path(get_tmp_path(), name, pool, ip, mask)
-  }
-  pub fn new_alongside(
-    name: impl AsRef<str>,
-    pool: impl AsRef<str>,
-    ip: Ipv4Addr,
-    mask: u8,
-  ) -> std::io::Result<Self> {
-    Self::new_with_path(ALOGNSIDE_PATH, name, pool, ip, mask)
+    let mut adapter = Adapter::create(name.as_ref(), pool.as_ref(), None)?;
+    adapter.set_ip_address(wtun::IpAndMaskPrefix::V4 {
+      ip,
+      prefix: mask
+        .try_into()
+        .ok()
+        .ok_or(std::io::ErrorKind::InvalidInput)?,
+    })?;
+    let session = adapter.start_session_wrapped(ring_capacity!(MAX_RING_CAPACITY))?;
+    Ok(Self {
+      session,
+      adapter,
+      in_tx: None,
+      out_rx: None,
+      thread: None,
+      terminate: Arc::new(AtomicBool::new(true)),
+    })
   }
   pub fn recv(&self) -> Option<Vec<u8>> {
     self.out_rx.as_ref().unwrap().try_recv().ok()
@@ -201,7 +185,7 @@ impl Tun {
       tx: self.in_tx.as_ref().unwrap().clone(),
     }
   }
-  pub fn adapter(&self) -> &Arc<Adapter> {
+  pub fn adapter(&self) -> &Adapter {
     &self.adapter
   }
 }
@@ -212,7 +196,6 @@ impl Drop for Tun {
     if let Some(thread) = std::mem::replace(&mut self.thread, None) {
       drop(thread.join());
     }
-    self.session.shutdown();
   }
 }
 
@@ -237,14 +220,9 @@ impl mio::event::Source for Tun {
         if terminate.load(Ordering::Relaxed) {
           return Ok(());
         }
-        if let Some(packet) = session.try_receive().map_err(|_| {
-          std::io::Error::new(
-            ErrorKind::ConnectionAborted,
-            "Failed to receive packet from session",
-          )
-        })? {
+        if let Ok(packet) = session.recv() {
           out_tx
-            .send(packet.bytes().to_vec())
+            .send(packet.slice().to_vec())
             .map_err(|err| std::io::Error::new(ErrorKind::ConnectionAborted, err))?;
           if interests.is_readable() {
             waker.wake()?;
@@ -254,9 +232,14 @@ impl mio::event::Source for Tun {
           if packet.len() > 0xFFFF {
             continue;
           }
-          if let Ok(mut packet_send) = session.allocate_send_packet(packet.len() as u16) {
-            packet_send.bytes_mut().copy_from_slice(&packet);
-            session.send_packet(packet_send);
+          if let Some(mut packet_send) = packet
+            .len()
+            .try_into()
+            .ok()
+            .and_then(|len| session.allocate(len).ok())
+          {
+            packet_send.mut_slice().copy_from_slice(&packet);
+            packet_send.send();
             drop(out_tx.send(packet));
             if interests.is_readable() {
               waker.wake()?;
@@ -266,9 +249,14 @@ impl mio::event::Source for Tun {
           }
         }
         if let Some(packet) = packet_buffer.pop_front() {
-          if let Ok(mut packet_send) = session.allocate_send_packet(packet.len() as u16) {
-            packet_send.bytes_mut().copy_from_slice(&packet);
-            session.send_packet(packet_send);
+          if let Some(mut packet_send) = packet
+            .len()
+            .try_into()
+            .ok()
+            .and_then(|len| session.allocate(len).ok())
+          {
+            packet_send.mut_slice().copy_from_slice(&packet);
+            packet_send.send();
           } else {
             packet_buffer.push_back(packet);
           }
