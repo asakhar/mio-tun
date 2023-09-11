@@ -28,12 +28,12 @@ impl TunSender {
   }
 }
 
-const fn mask_from_prefix(prefix: u8) -> (u8, u8, u8, u8) {
+fn mask_from_prefix(prefix: u8) -> (u8, u8, u8, u8) {
   (
-    (1u8 << (prefix % 8)).wrapping_sub(1),
-    (1u8 << (prefix / 8 % 8)).wrapping_sub(1),
-    (1u8 << (prefix / 16 % 8)).wrapping_sub(1),
-    (1u8 << (prefix / 24 % 8)).wrapping_sub(1),
+    1u8.checked_shl(prefix.saturating_sub(0).clamp(0, 8) as u32).unwrap_or(0).wrapping_sub(1).reverse_bits(),
+    1u8.checked_shl(prefix.saturating_sub(8).clamp(0, 8) as u32).unwrap_or(0).wrapping_sub(1).reverse_bits(),
+    1u8.checked_shl(prefix.saturating_sub(16).clamp(0, 8) as u32).unwrap_or(0).wrapping_sub(1).reverse_bits(),
+    1u8.checked_shl(prefix.saturating_sub(24).clamp(0, 8) as u32).unwrap_or(0).wrapping_sub(1).reverse_bits(),
   )
 }
 
