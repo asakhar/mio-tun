@@ -10,69 +10,6 @@ use std::{
   thread::JoinHandle,
 };
 
-// #[cfg(target_arch = "x86_64")]
-// pub const WINTUN_DLL: &'static [u8] = include_bytes!("wintun/bin/amd64/wintun.dll");
-// #[cfg(target_arch = "x86")]
-// pub const WINTUN_DLL: &'static [u8] = include_bytes!("wintun/bin/x86/wintun.dll");
-// #[cfg(target_arch = "arm")]
-// pub const WINTUN_DLL: &'static [u8] = include_bytes!("wintun/bin/arm/wintun.dll");
-// #[cfg(target_arch = "aarch64")]
-// pub const WINTUN_DLL: &'static [u8] = include_bytes!("wintun/bin/arm64/wintun.dll");
-
-// pub fn unpack_dll(path: impl AsRef<Path>) -> std::io::Result<()> {
-//   let mut file = std::fs::File::options()
-//     .write(true)
-//     .create(true)
-//     .open(path)?;
-//   file.write_all(WINTUN_DLL)?;
-//   Ok(())
-// }
-
-// pub fn load_wintun_with_path(path: impl AsRef<Path>) -> std::io::Result<Wintun> {
-//   let path = path.as_ref();
-//   unpack_dll(path)?;
-//   unsafe { wintun::load_from_path(path) }
-//     .map_err(|err| std::io::Error::new(ErrorKind::InvalidData, err))
-// }
-
-// pub const ALOGNSIDE_PATH: &'static str = "./wintun.dll";
-// pub fn get_tmp_path() -> PathBuf {
-//   let path = std::env::var_os("Temp").expect("Temp directory env variable not found");
-//   let path = Path::new(&path).join("wintun");
-//   std::fs::create_dir_all(&path).expect("Failed to create directory for wintun dll");
-//   path.join("wintun.dll")
-// }
-
-// pub fn adapter_with_path(
-//   path: impl AsRef<Path>,
-//   name: impl AsRef<str>,
-//   pool: impl AsRef<str>,
-// ) -> std::io::Result<Arc<Adapter>> {
-//   let wintun = load_wintun_with_path(path)?;
-//   let name = name.as_ref();
-//   let pool = pool.as_ref();
-//   Ok(match Adapter::open(&wintun, name) {
-//     Ok(a) => a,
-//     Err(_) => {
-//       //If loading failed (most likely it didn't exist), create a new one
-//       wintun::Adapter::create(&wintun, pool, name, None)
-//         .map_err(|err| std::io::Error::new(ErrorKind::Other, format!("{err}")))?
-//     }
-//   })
-// }
-
-// pub fn session_with_path(
-//   path: impl AsRef<Path>,
-//   name: impl AsRef<str>,
-//   pool: impl AsRef<str>,
-// ) -> std::io::Result<(Arc<Session>, Arc<Adapter>)> {
-//   let adapter = adapter_with_path(path, name, pool)?;
-//   let session = adapter
-//     .start_session(wintun::MAX_RING_CAPACITY)
-//     .map_err(|err| std::io::Error::new(ErrorKind::Other, format!("{err}")))?;
-//   Ok((Arc::new(session), adapter))
-// }
-
 pub fn set_ip_address(
   adapter: &Arc<Adapter>,
   internal_ip: Ipv4Addr,
